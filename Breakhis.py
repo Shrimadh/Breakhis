@@ -17,8 +17,8 @@ os.getcwd()
 # place the files in your IDE working dicrectory .
 labels = pd.read_csv('data.csv')
 test = pd.read_csv('test.csv')
-train_path = 'Cancer\Test'
-test_path = 'Cancer\Train'
+train_path = 'Data\Cancer\Train'
+test_path = 'Data\Cancer\Test'
 
 class CustomDataset(Dataset):
     def __init__(self, data, path , transform = None):
@@ -92,8 +92,10 @@ class CNN(nn.Module):
         x = self.fc2(x)
         return x
 
-model = CNN()
-model = CNN().to(device)
+# model = CNN()
+# model = CNN().to(device)
+model = torch.hub.load('pytorch/vision:v0.9.0', 'googlenet', pretrained=False)
+
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(),lr = learning_rate)
 

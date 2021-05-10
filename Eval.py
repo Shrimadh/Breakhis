@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
 import torchvision.transforms as transforms
+from torchvision import datasets, models, transforms
 import numpy as np
 import matplotlib.image as img
 from torch.utils.data import Dataset, DataLoader
@@ -34,7 +35,7 @@ class CustomDataset(Dataset):
     
     def __getitem__(self,index):
         img_name,label = self.data[index]
-        img_path = os.path.join(self.path, img_name)
+        img_path = os.path.join(img_name)
         image = img.imread(img_path)
         if self.transform is not None:
             image = self.transform(image)
@@ -68,26 +69,26 @@ test_transform = transforms.Compose([transforms.ToPILImage(),
                                      transforms.Normalize(means,std),
                                     ])
 
-test_data = CustomDataset(pd.read_csv("test.csv"), 'Cancer\Test', test_transform )
-test_loader = DataLoader(dataset = test_data, batch_size = 25, shuffle=False, num_workers=0)
+# test_data = CustomDataset(pd.read_csv("test.csv"), './Data/Cancer/Test', test_transform )
+# test_loader = DataLoader(dataset = test_data, batch_size = 25, shuffle=False, num_workers=0)
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model = CNN()
-model.load_state_dict(torch.load("modelwithoutpreprocessing.ckpt"))
-model.eval()  # it-disables-dropout
-with torch.no_grad():
-    correct = 0
-    total = 0
-    for i,(images, labels) in enumerate(test_loader):
-        if(i>8000):
-            break
-        images = images.to(device)
-        labels = labels.to(device)
-        outputs = model(images)
-        _, predicted = torch.max(outputs.data, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
+# model = torch.hub.load('pytorch/vision:v0.9.0', 'googlenet', pretrained=False)
+# model.load_state_dict(torch.load("modelwithoutpreprocessing.ckpt"))
+# model.eval()  # it-disables-dropout
+# with torch.no_grad():
+#     correct = 0
+#     total = 0
+#     for i,(images, labels) in enumerate(test_loader):
+#         if(i>8000):
+#             break
+#         images = images.to(device)
+#         labels = labels.to(device)
+#         outputs = model(images)
+#         _, predicted = torch.max(outputs.data, 1)
+#         total += labels.size(0)
+#         correct += (predicted == labels).sum().item()
           
-    print('Test Accuracy of the model without preprocessing is: {} %'.format(100 * correct / total))
+#     print('Test Accuracy of the model without preprocessing is: {} %'.format(100 * correct / total))
 
 
 test_transform = transforms.Compose([transforms.ToPILImage(),
@@ -97,10 +98,12 @@ test_transform = transforms.Compose([transforms.ToPILImage(),
                                      transforms.Normalize(means,std),
                                     ])
 
-test_data = CustomDataset(pd.read_csv("test.csv"), 'Cancer\Test', test_transform )
+test_data = CustomDataset(pd.read_csv("test.csv"), './Data/Cancer/Test', test_transform )
 test_loader = DataLoader(dataset = test_data, batch_size = 25, shuffle=False, num_workers=0)
-model = CNN()
-model.load_state_dict(torch.load("modelwithsharpening.ckpt"))
+model = models.resnet34(pretrained=True)
+num_ftrs = model.fc.in_features
+model.fc = nn.Linear(num_ftrs, 2)
+model.load_state_dict(torch.load("resnetnetwithsharpening.ckpt"))
 model.eval()  # it-disables-dropout
 
 with torch.no_grad():
